@@ -59,178 +59,58 @@ class PasswordManager:
         # Initialize the encrypted SQLite database.
         self._initialize_database(encryption_key)
 
-    # Function to intialize the 
-    def _initialize_database(self, encryption_key: bytes):
-        """
-        Create and initialize the encrypted SQLite database (password vault).
-        This uses SQLCipher via SQLite PRAGMA commands.
-        """
-        # Connect to the database (creates the file if it doesn't exist).
-        self.conn = sqlite3.connect(self.db_file)
-        cursor = self.conn.cursor()
+    # Function to intialize the password vault
+    def _initialize_database():
+        
+        # Connect to the database or create one
 
-        # SQLCipher requires setting a key via PRAGMA.
-        # Here we convert the binary key to a hex string.
-        key_hex = encryption_key.hex()
-        cursor.execute(f"PRAGMA key = \"x'{key_hex}'\";")
+        # Create the table for storing entries if it doesn't exist
+        
 
-        # Create the table for storing entries if it doesn't exist.
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS entries (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                platform TEXT NOT NULL,
-                username TEXT NOT NULL,
-                password TEXT NOT NULL
-            );
-        """)
-        self.conn.commit()
+    # Function to access exisitng acoounts
+    def access_account():
+        # Ensure that the salt and hashed_auth_key files exist
 
-    def access_account(self, master_password: str) -> bool:
-        """
-        Attempt to access an existing account:
-          - Loads the stored salt and hashed authentication key.
-          - Derives keys from the provided master password.
-          - Compares the derived authentication key hash with the stored hash.
-          - If verified, opens and decrypts the SQLite database.
-        Returns True if access is granted; otherwise, False.
-        """
-        # Ensure that the required files exist.
-        if not os.path.exists(self.salt_file) or not os.path.exists(self.auth_file):
-            print("Account does not exist. Please create an account first.")
-            return False
 
         # Load stored salt and hashed authentication key.
-        with open(self.salt_file, 'rb') as f:
-            salt = f.read()
-        with open(self.auth_file, 'rb') as f:
-            stored_auth_hash = f.read()
 
-        # Derive key from the provided master password using Argon2.
-        key = hash_secret_raw(
-            password=master_password.encode('utf-8'),
-            salt=salt,
-            time_cost=ARGON2_TIME_COST,
-            memory_cost=ARGON2_MEMORY_COST,
-            parallelism=ARGON2_PARALLELISM,
-            hash_len=ARGON2_HASH_LEN,
-            type=ARGON2_TYPE
-        )
-        half = ARGON2_HASH_LEN // 2
-        auth_key = key[:half]
-        encryption_key = key[half:]
 
-        # Hash the authentication key.
-        auth_key_hash = hashlib.sha256(auth_key).digest()
+        # Derive key from the provided master password using Argon2
+      
+      
+        # Hash the authentication key
+        
 
-        # Compare the computed authentication hash to the stored one.
-        if auth_key_hash != stored_auth_hash:
-            print("Authentication failed: Incorrect master password.")
-            return False
+        # Compare the computed authentication hash to the stored one. Authentication fails or is successful
+        
 
-        # Authentication successful; save the encryption key.
-        self.encryption_key = encryption_key
+        # If authentication is successful save the encryption key.
+        
 
         # Open the encrypted database.
-        self.conn = sqlite3.connect(self.db_file)
-        key_hex = encryption_key.hex()
-        cursor = self.conn.cursor()
-        cursor.execute(f"PRAGMA key = \"x'{key_hex}'\";")
-        try:
-            # Test the decryption by querying the schema.
-            cursor.execute("SELECT count(*) FROM sqlite_master;")
-            cursor.fetchall()
-        except sqlite3.DatabaseError:
-            print("Failed to decrypt database. Possibly wrong encryption key.")
-            return False
+        
+        
+        # Test to ensure proper decryption of vault 
+    
 
-        print("Access granted. Database unlocked.")
-        return True
-
-    def add_entry(self, platform: str, username: str, password: str):
-        """
-        Add a new credential entry to the vault.
-        """
-        if self.conn is None:
-            print("No active database connection. Please log in.")
-            return
-        cursor = self.conn.cursor()
-        cursor.execute(
-            "INSERT INTO entries (platform, username, password) VALUES (?, ?, ?)",
-            (platform, username, password)
-        )
-        self.conn.commit()
-        print("Entry added successfully.")
-
+    # Function to add an entry to the vault
+    def add_entry():
+        
+    # Function to retrieve all entries from the vault
     def get_entries(self):
-        """
-        Retrieve all entries from the vault.
-        """
-        if self.conn is None:
-            print("No active database connection. Please log in.")
-            return []
-        cursor = self.conn.cursor()
-        cursor.execute("SELECT id, platform, username, password FROM entries")
-        return cursor.fetchall()
 
-    def update_entry(self, entry_id: int, platform: str = None, username: str = None, password: str = None):
-        """
-        Update an existing entry. Only non-None fields will be updated.
-        """
-        if self.conn is None:
-            print("No active database connection. Please log in.")
-            return
-        cursor = self.conn.cursor()
-
-        # Dynamically build the update statement.
-        fields = []
-        params = []
-        if platform:
-            fields.append("platform = ?")
-            params.append(platform)
-        if username:
-            fields.append("username = ?")
-            params.append(username)
-        if password:
-            fields.append("password = ?")
-            params.append(password)
-        if not fields:
-            print("No fields provided to update.")
-            return
-
-        params.append(entry_id)
-        query = "UPDATE entries SET " + ", ".join(fields) + " WHERE id = ?"
-        cursor.execute(query, tuple(params))
-        self.conn.commit()
-        print("Entry updated successfully.")
-
-    def delete_entry(self, entry_id: int):
-        """
-        Delete an entry from the vault by its ID.
-        """
-        if self.conn is None:
-            print("No active database connection. Please log in.")
-            return
-        cursor = self.conn.cursor()
-        cursor.execute("DELETE FROM entries WHERE id = ?", (entry_id,))
-        self.conn.commit()
-        print("Entry deleted successfully.")
-
+    # Function to update an exisitng entry
+    def update_entry():
+        
+    # Function to delete an entry
+    def delete_entry():
+        
+    # password generation
     def generate_password(self, length: int = 16, 
                           allowed_chars: str = string.ascii_letters + string.digits + string.punctuation) -> str:
-        """
-        Generate a secure random password.
-        Uses the secrets module to pick characters uniformly at random.
-        """
+        
         return ''.join(secrets.choice(allowed_chars) for _ in range(length))
 
+    # logoff from database and clear memory
     def logout(self):
-        """
-        Log out of the account:
-          - Close the database connection.
-          - Clear the encryption key from memory.
-        """
-        if self.conn:
-            self.conn.close()
-        self.conn = None
-        self.encryption_key = None
-        print("Logged out and keys cleared.")
+    
