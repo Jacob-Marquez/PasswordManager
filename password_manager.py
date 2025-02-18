@@ -20,15 +20,8 @@ class PasswordManager:
         self.auth_file = auth_file
 
     # account creation
-    def create_account(self, master_password: str):
-        """
-        Create a new account:
-          - Generates a random salt.
-          - Derives a key from the master password using Argon2.
-          - Splits the derived key into an authentication key and an encryption key.
-          - Hashes the authentication key with SHA-256 and stores it with the salt.
-          - Initializes an encrypted SQLite database.
-        """
+    def create_account():
+        
         # Generate a secure random salt
         salt
 
