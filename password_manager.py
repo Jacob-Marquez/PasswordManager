@@ -9,7 +9,7 @@ from argon2.low_level import hash_secret_raw
 
 # temp file paths for stored salt and hashed authentication key
 SALT_FILE = "salt.bin"
-AUTH_FILE = "auth_key.hash"
+AUTH_FILE = "auth_key.bin"
 DB_FILE = "vault.db"
 
 # create password manager class
@@ -30,19 +30,13 @@ class PasswordManager:
         key 
 
         # Split the key into two halves. Authentication and Encryption of DB
-        half = ARGON2_HASH_LEN // 2
-        auth_key = key[:half]
-        encryption_key = key[half:]
-
+       
+       
         # Hash the authentication key using SHA-256.
         auth_key_hash
 
         # Store the salt and the hashed authentication key in files.
-        with open(self.salt_file, 'wb') as f:
-            f.write(salt)
-        with open(self.auth_file, 'wb') as f:
-            f.write(auth_key_hash)
-
+        
         # Clear the master password from memory
         
         
@@ -97,12 +91,6 @@ class PasswordManager:
         
     # Function to delete an entry
     def delete_entry():
-        
-    # password generation
-    def generate_password(self, length: int = 16, 
-                          allowed_chars: str = string.ascii_letters + string.digits + string.punctuation) -> str:
-        
-        return ''.join(secrets.choice(allowed_chars) for _ in range(length))
 
     # logoff from database and clear memory
     def logout(self):
