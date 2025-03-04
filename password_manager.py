@@ -3,7 +3,8 @@ import secrets
 import sqlite3
 import hashlib
 import string
-from argon2.low_level import hash_secret_raw
+from argon2.low_level import hash_secret_raw, Type
+from generator import generate_password
 
 # Argon and salt constants
 
@@ -22,18 +23,49 @@ class PasswordManager:
     # account creation
     def create_account():
         
-        # Generate a secure random salt
-        salt
-
+        print("Welcome User. Press 1 to enter a master password. Press 2 if you would like to have password generated.")
+        x = input()
+        print(x)
+        
+        # Master Password creation
+        if x == "1":
+            print("Input Master Password of length 16:")
+            master_password = input()
+        elif x == "2":
+            master_password = generate_password()
+        else:
+            print("Invalid input")
+            
+        print(master_password)
+        
+        # Create salt then store in "salt.bin" for later authentication
+        salt = os.urandom(16)
+        with open("salt.bin", "wb") as file:
+            file.write(salt)
+        print(salt)
+            
         # Derive a key from the master password using Argon2
         # The derived key is ARGON2_HASH_LEN bytes long
-        key 
+        hash_val = hash_secret_raw(
+            master_password.encode("utf-8"),
+            salt,
+            time_cost=2,
+            memory_cost=102400,
+            parallelism=8,
+            hash_len=32,
+            type=Type.I
+        )
 
-        # Split the key into two halves. Authentication and Encryption of DB
-       
+        print("Hash (hex):", hash_val.hex())
+        print(hash_val)
+            
+        # Split the key into two halves. Authentication key and Encryption key for DB
+        
        
         # Hash the authentication key using SHA-256.
-        auth_key_hash
+        
+            
+        """
 
         # Store the salt and the hashed authentication key in files.
         
@@ -94,4 +126,4 @@ class PasswordManager:
 
     # logoff from database and clear memory
     def logout(self):
-    
+    """
