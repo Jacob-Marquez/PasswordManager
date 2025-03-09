@@ -3,10 +3,75 @@ import secrets
 import sqlite3
 import hashlib
 import string
+import cffi
 from argon2.low_level import hash_secret_raw, Type
 from generator import generate_password
 
-# Argon and salt constants
+ffi = cffi.FFI()
+ffi.cdef("""
+int argon2_hash(
+    unsigned int t_cost,
+    unsigned int m_cost,
+    unsigned int parallelism,
+    const void *pwd, size_t pwdlen,
+    const void *salt, size_t saltlen,
+    void *hash, size_t hashlen,
+    char *encoded, size_t encodedlen,
+    int argon2_type,
+    unsigned int version
+);
+
+const char *argon2_error_message(int error_code);
+""")
+
+argon2 = ffi.dlopen("C:/Users/jacob/vcpkg/installed/x64-windows/bin/argon2.dll")
+
+# Argon constants
+ARGON2_VERSION_13 = 0x13
+ARGON2_TYPE_I  = 1
+ARGON2_TYPE_ID = 2
+
+def argon2_hash_raw(password_ba, salt_ba,
+                    t_cost=2,
+                    m_cost=102400,
+                    parallelism=8,
+                    hash_len=32,
+                    argon2_type=ARGON2_TYPE_I):
+    pwd_len = len(password_ba)
+    salt_len = len(salt_ba)
+    pwd_buf  = ffi.new("unsigned char[]", pwd_len)
+    salt_buf = ffi.new("unsigned char[]", salt_len)
+    out_buf  = ffi.new("unsigned char[]", hash_len)
+
+    ffi.memmove(pwd_buf, bytes(password_ba), pwd_len)
+    ffi.memmove(salt_buf, bytes(salt_ba), salt_len)
+
+    encoded_ptr = ffi.NULL
+    encoded_len = 0
+
+    rc = argon2.argon2_hash(
+        t_cost,
+        m_cost,
+        parallelism,
+        pwd_buf, pwd_len,
+        salt_buf, salt_len,
+        out_buf, hash_len,
+        encoded_ptr, encoded_len,
+        argon2_type,
+        ARGON2_VERSION_13
+    )
+
+    if rc != 0:
+        err_msg_ptr = argon2.argon2_error_message(rc)
+        err_msg = ffi.string(err_msg_ptr).decode("utf-8", "replace")
+        for i in range(pwd_len):
+            pwd_buf[i] = 0
+        raise RuntimeError(f"argon2_hash failed with code {rc}: {err_msg}")
+
+    for i in range(pwd_len):
+        pwd_buf[i] = 0
+
+    return out_buf
 
 # temp file paths for stored salt and hashed authentication key
 SALT_FILE = "salt.bin"
@@ -25,12 +90,12 @@ class PasswordManager:
         
         print("Welcome User. Press 1 to enter a master password. Press 2 if you would like to have password generated.")
         x = input()
-        print(x)
         
         # Master Password creation
         if x == "1":
             print("Input Master Password of length 16:")
-            master_password = input()
+            str = input()
+            master_password = bytearray(str, 'utf-8')
         elif x == "2":
             master_password = generate_password()
         else:
@@ -46,46 +111,87 @@ class PasswordManager:
             
         # Derive a key from the master password using Argon2
         # The derived key is ARGON2_HASH_LEN bytes long
-        hash_val = hash_secret_raw(
-            master_password.encode("utf-8"),
-            salt,
-            time_cost=2,
-            memory_cost=102400,
+        ptr_val = argon2_hash_raw(
+            password_ba=master_password,
+            salt_ba=salt,
+            t_cost=2,
+            m_cost=102400,
             parallelism=8,
             hash_len=32,
-            type=Type.I
+            argon2_type=ARGON2_TYPE_I
         )
 
-        print("Hash (hex):", hash_val.hex())
+        hash_val = bytearray(ptr_val)
         print(hash_val)
             
         # Split the key into two halves. Authentication key and Encryption key for DB
-        
+        mid_hash = len(hash_val)//2
+    
+        auth_key = hash_val[:mid_hash]
+        encr_key = hash_val[mid_hash:]
+    
+        print("Auth: ",auth_key.hex())
+        print("Encr: ",encr_key.hex())
        
         # Hash the authentication key using SHA-256.
+        hashed_auth_key = hashlib.sha256(auth_key).digest()
+        print(hashed_auth_key.hex())
         
+        # Store hashed auth key in "auth_key.bin"
+        with open("auth_key.bin", "wb") as file:
+            file.write(hashed_auth_key)
             
-        """
-
-        # Store the salt and the hashed authentication key in files.
+        # Clear all data necessary from data
+        ffi.memmove(ptr_val, b"\x00" * 32, 32)
         
-        # Clear the master password from memory
+        for i in range(len(master_password)):
+            master_password[i] = 0
         
+        print("Huzzah!")
+        # Initialize database
         
-        # Save the encryption key for the session.
-        self.encryption_key = encryption_key
-
-        # Initialize the encrypted SQLite database.
-        self._initialize_database(encryption_key)
-
+        conn = initialize_database()
+        # Initialize the encrypted SQLite database. initialize_database(encr_key)
+        
+    
     # Function to intialize the password vault
-    def _initialize_database():
+    def initialize_database():
         
         # Connect to the database or create one
-
+        conn = connect_database(DB_FILE)
         # Create the table for storing entries if it doesn't exist
+        create_pword_table(conn)
         
-
+        return conn
+    
+    
+    def connect_database(db_name):
+        conn = None
+        try:
+            conn = sqlite3.connect(db_name)
+            print(f"Connected to db file: {db_name}")
+        except sqlite3.Error as e:
+            print(f"Error: {e}")
+        return conn
+    
+    def create_pword_table(conn):
+        try:
+            cursor = conn.cursor()
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS vault (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    platform TEXT NOT NULL,
+                    username TEXT NOT NULL,
+                    password TEXT NOT NULL
+                );
+            """)
+            conn.commit()
+            print("Table 'vault' created or already exists.")
+        except sqlite3.Error as e:
+            print(f"Error creating table: {e}")
+        
+        
+        """
     # Function to access exisitng acoounts
     def access_account():
         # Ensure that the salt and hashed_auth_key files exist
