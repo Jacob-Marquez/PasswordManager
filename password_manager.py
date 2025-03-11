@@ -1,9 +1,12 @@
 import os
 import secrets
 import sqlite3
+import base64
 import hashlib
 import string
 import cffi
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+from cryptography.hazmat.backends import default_backend
 from argon2.low_level import hash_secret_raw, Type
 from generator import generate_password
 
@@ -114,6 +117,12 @@ class PasswordManager:
         
         # Connect to the database or create one
         conn = self.connect_database()
+        
+        # Drop if table exists already
+        cursor = conn.cursor()
+        cursor.execute("DROP TABLE IF EXISTS pword")
+        conn.commit()
+        
         # Create the table for storing entries if it doesn't exist
         self.create_pword_table(conn)
         
@@ -135,6 +144,20 @@ class PasswordManager:
             print(f"Error reading from database: {e}")
             
         return
+    
+    def encrypt_entry(data, key):
+        iv = os.urandom(12)
+        cipher = Cipher(algorithms.AES(key), modes.GCM(iv), backend=default_backend())
+        encryptor = cipher.encryptor()
+        ciphertext = encryptor.update(data.encode()) + encryptor.finalize()
+        return base64.b64encode(iv + encryptor.tag + ciphertext).decode()
+    
+    def decrypt_data(encrypted_data: str, key: bytes) -> str:
+        encrypted_data = base64.b64decode(encrypted_data.encode())
+        iv, tag, ciphertext = encrypted_data[:12], encrypted_data[12:28], encrypted_data[28:]
+        cipher = Cipher(algorithms.AES(key), modes.GCM(iv, tag), backend=default_backend())
+        decryptor = cipher.decryptor()
+        return (decryptor.update(ciphertext) + decryptor.finalize()).decode()
     
     def add_entry(self, conn):
         # Add a password entry
@@ -164,10 +187,6 @@ class PasswordManager:
         
         return
     
-    def close_vault(self, conn):
-        # Close connection with database and encrypt again
-        return
-    
     def user_options(self, conn):
         # Creat loop that breaks when user is done with database
         while True:
@@ -183,7 +202,6 @@ class PasswordManager:
             elif x == "2":
                 self.add_entry(conn)
             elif x == "3":
-                self.close_vault(conn)
                 break
             else:
                 print("Invalid Input")
@@ -255,6 +273,8 @@ class PasswordManager:
         # Initialize the encrypted SQLite database. initialize_database(encr_key)
         
         self.user_options(conn)
+        
+        # close account and encrypt database
     
     
         """
