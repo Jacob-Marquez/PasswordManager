@@ -120,7 +120,7 @@ class PasswordManager:
         
         # Drop if table exists already
         cursor = conn.cursor()
-        cursor.execute("DROP TABLE IF EXISTS pword")
+        cursor.execute("DROP TABLE IF EXISTS vault")
         conn.commit()
         
         # Create the table for storing entries if it doesn't exist
