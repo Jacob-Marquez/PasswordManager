@@ -145,11 +145,22 @@ class PasswordManager:
         if x == "1":
             print("Input password of length 16:")
             str = input()
-            master_password = bytearray(str, 'utf-8')
+            password = bytearray(str, 'utf-8')
         elif x == "2":
-            master_password = generate_password(10)
+            password = generate_password(10)
         else:
             print("Invalid input")
+            
+        try:
+            cursor = conn.cursor()
+            cursor.execute("""
+                           INSERT INTO vault (platform, username, password)
+                           VALUES (?, ?, ?)
+                           """, (platform, username, password))
+            conn.commit()
+            print("Entry added")
+        except sqlite3.Error as e:
+            print(f"Error trying to add entry: {e}") 
         
         return
     
@@ -240,9 +251,6 @@ class PasswordManager:
         for i in range(len(master_password)):
             master_password[i] = 0
         
-        print("Huzzah!")
-        # Initialize database
-        
         conn = self.initialize_database()
         # Initialize the encrypted SQLite database. initialize_database(encr_key)
         
@@ -276,18 +284,10 @@ class PasswordManager:
         # Test to ensure proper decryption of vault 
     
 
-    # Function to add an entry to the vault
-    def add_entry():
-        
-    # Function to retrieve all entries from the vault
-    def get_entries(self):
-
     # Function to update an exisitng entry
     def update_entry():
         
     # Function to delete an entry
     def delete_entry():
 
-    # logoff from database and clear memory
-    def logout(self):
     """

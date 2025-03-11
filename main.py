@@ -14,44 +14,6 @@ SALT_FILE = "salt.bin"
 AUTH_FILE = "auth_key.bin"
 DB_FILE = "vault.db"
 
-def create_vault_connection(db_name):
-    conn = None
-    try:
-        conn = sqlite3.connect(db_name)
-        print(f"Connected to db file: {db_name}")
-    except sqlite3.Error as e:
-        print(f"Error: {e}")
-    return conn
-        
-def create_table(conn):
-    try:
-        cursor = conn.cursor()
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS vault (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                platform TEXT NOT NULL,
-                username TEXT NOT NULL,
-                password TEXT NOT NULL
-            );
-        """)
-        conn.commit()
-        print("Table 'vault' created or already exists.")
-    except sqlite3.Error as e:
-        print(f"Error creating table: {e}")
-
-def print_all_records(conn):
-    try:
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM vault;")
-        rows = cursor.fetchall()
-        
-        if rows:
-            for row in rows:
-                print(row)
-        else:
-            print("No records found in the vault table.")
-    except sqlite3.Error as e:
-        print(f"Error reading from database: {e}")
 
 if __name__ == "__main__":
     pm = PasswordManager()
