@@ -85,8 +85,101 @@ class PasswordManager:
         self.salt_file = salt_file
         self.auth_file = auth_file
 
+    def connect_database(self):
+        conn = None
+        try:
+            conn = sqlite3.connect(self.db_file)
+            print(f"Connected to db file: {self.db_file}")
+        except sqlite3.Error as e:
+            print(f"Error: {e}")
+        return conn
+    
+    def create_pword_table(self, conn):
+        try:
+            cursor = conn.cursor()
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS vault (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    platform TEXT NOT NULL,
+                    username TEXT NOT NULL,
+                    password TEXT NOT NULL
+                );
+            """)
+            conn.commit()
+            print("Table 'vault' created or already exists.")
+        except sqlite3.Error as e:
+            print(f"Error creating table: {e}")
+    
+    def initialize_database(self):
+        
+        # Connect to the database or create one
+        conn = self.connect_database()
+        # Create the table for storing entries if it doesn't exist
+        self.create_pword_table(conn)
+        
+        return conn
+    
+    def display_database(self, conn):
+        # access passwords
+        try:
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM vault;")
+            rows = cursor.fetchall()
+        
+            if rows:
+                for row in rows:
+                    print(row)
+            else:
+                print("No records found in the vault table.")
+        except sqlite3.Error as e:
+            print(f"Error reading from database: {e}")
+            
+        return
+    
+    def add_entry(self, conn):
+        # Add a password entry
+        platform = input("Enter Platform: ")
+        username = input("Enter username or email associated with platform: ")
+        x = input("Input 1 to use your own password or 2 to have a strong password generated: ")
+        
+        if x == "1":
+            print("Input password of length 16:")
+            str = input()
+            master_password = bytearray(str, 'utf-8')
+        elif x == "2":
+            master_password = generate_password(10)
+        else:
+            print("Invalid input")
+        
+        return
+    
+    def close_vault(self, conn):
+        # Close connection with database and encrypt again
+        return
+    
+    def user_options(self, conn):
+        # Creat loop that breaks when user is done with database
+        while True:
+            # prompt user to ask them what action they would like to carry out
+            print("Please choose an action:")
+            print("1.) Access Passwords")
+            print("2.) Create new password entry")
+            print("3.) Exit and close")
+            x = input("Enter choice: ")
+            
+            if x == "1":
+                self.display_database(conn)
+            elif x == "2":
+                self.add_entry(conn)
+            elif x == "3":
+                self.close_vault(conn)
+                break
+            else:
+                print("Invalid Input")
+                
+    
     # account creation
-    def create_account():
+    def create_account(self):
         
         print("Welcome User. Press 1 to enter a master password. Press 2 if you would like to have password generated.")
         x = input()
@@ -97,7 +190,7 @@ class PasswordManager:
             str = input()
             master_password = bytearray(str, 'utf-8')
         elif x == "2":
-            master_password = generate_password()
+            master_password = generate_password(16)
         else:
             print("Invalid input")
             
@@ -150,47 +243,12 @@ class PasswordManager:
         print("Huzzah!")
         # Initialize database
         
-        conn = initialize_database()
+        conn = self.initialize_database()
         # Initialize the encrypted SQLite database. initialize_database(encr_key)
         
-    
-    # Function to intialize the password vault
-    def initialize_database():
-        
-        # Connect to the database or create one
-        conn = connect_database(DB_FILE)
-        # Create the table for storing entries if it doesn't exist
-        create_pword_table(conn)
-        
-        return conn
+        self.user_options(conn)
     
     
-    def connect_database(db_name):
-        conn = None
-        try:
-            conn = sqlite3.connect(db_name)
-            print(f"Connected to db file: {db_name}")
-        except sqlite3.Error as e:
-            print(f"Error: {e}")
-        return conn
-    
-    def create_pword_table(conn):
-        try:
-            cursor = conn.cursor()
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS vault (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    platform TEXT NOT NULL,
-                    username TEXT NOT NULL,
-                    password TEXT NOT NULL
-                );
-            """)
-            conn.commit()
-            print("Table 'vault' created or already exists.")
-        except sqlite3.Error as e:
-            print(f"Error creating table: {e}")
-        
-        
         """
     # Function to access exisitng acoounts
     def access_account():

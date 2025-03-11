@@ -54,8 +54,8 @@ def print_all_records(conn):
         print(f"Error reading from database: {e}")
 
 if __name__ == "__main__":
-    
-    PasswordManager.create_account()
+    pm = PasswordManager()
+    pm.create_account()
     
     """
     password = generate_password()

@@ -2,7 +2,7 @@ import secrets
 import string
 
 
-def generate_password(length=16, allowed_chars=string.ascii_letters + string.digits + string.punctuation) -> bytearray:
+def generate_password(length, allowed_chars=string.ascii_letters + string.digits + string.punctuation) -> bytearray:
     
     allowed_bytes = allowed_chars.encode("ascii", errors="replace")
     
