@@ -4,30 +4,12 @@ import sqlite3
 import base64
 import hashlib
 import string
-import cffi
-from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
-from cryptography.hazmat.backends import default_backend
-from argon2.low_level import hash_secret_raw, Type
+
+# from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+# from cryptography.hazmat.backends import default_backend
+# from argon2.low_level import hash_secret_raw, Type
 from generator import generate_password
 
-ffi = cffi.FFI()
-ffi.cdef("""
-int argon2_hash(
-    unsigned int t_cost,
-    unsigned int m_cost,
-    unsigned int parallelism,
-    const void *pwd, size_t pwdlen,
-    const void *salt, size_t saltlen,
-    void *hash, size_t hashlen,
-    char *encoded, size_t encodedlen,
-    int argon2_type,
-    unsigned int version
-);
-
-const char *argon2_error_message(int error_code);
-""")
-
-argon2 = ffi.dlopen("C:/Users/jacob/vcpkg/installed/x64-windows/bin/argon2.dll")
 
 # Argon constants
 ARGON2_VERSION_13 = 0x13

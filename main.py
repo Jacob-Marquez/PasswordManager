@@ -4,7 +4,7 @@ import sqlite3
 import hashlib
 import string
 import getpass
-from argon2.low_level import hash_secret_raw, Type
+# from argon2.low_level import hash_secret_raw, Type
 from password_manager import PasswordManager
 from generator import generate_password
 
