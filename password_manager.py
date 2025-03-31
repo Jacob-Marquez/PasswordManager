@@ -145,14 +145,14 @@ class PasswordManager:
             
         return
     
-    def encrypt_entry(data, key):
+    def encrypt_entry(self, data, key):
         iv = os.urandom(12)
         cipher = Cipher(algorithms.AES(key), modes.GCM(iv), backend=default_backend())
         encryptor = cipher.encryptor()
         ciphertext = encryptor.update(data.encode()) + encryptor.finalize()
         return base64.b64encode(iv + encryptor.tag + ciphertext).decode()
     
-    def decrypt_data(encrypted_data: str, key: bytes) -> str:
+    def decrypt_data(self, encrypted_data: str, key: bytes):
         encrypted_data = base64.b64decode(encrypted_data.encode())
         iv, tag, ciphertext = encrypted_data[:12], encrypted_data[12:28], encrypted_data[28:]
         cipher = Cipher(algorithms.AES(key), modes.GCM(iv, tag), backend=default_backend())
@@ -209,7 +209,7 @@ class PasswordManager:
     
     # account creation
     def create_account(self):
-        
+
         print("Welcome User. Press 1 to enter a master password. Press 2 if you would like to have password generated.")
         x = input()
         
@@ -239,7 +239,7 @@ class PasswordManager:
             t_cost=2,
             m_cost=102400,
             parallelism=8,
-            hash_len=32,
+            hash_len=64,
             argon2_type=ARGON2_TYPE_I
         )
 
