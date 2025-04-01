@@ -103,7 +103,11 @@ class PasswordManager:
         
             if rows:
                 for row in rows:
-                    print(row)
+                    try:
+                        decrypted_password = self.decrypt_data(row[3], self.encryption_key)
+                        print(f"ID: {row[0]}, Platform: {row[1]}, Username: {row[2]}, Password: {decrypted_password}")
+                    except Exception as e:
+                        print(f"Could not decrypt password for entry ID {row[0]}: {e}")
             else:
                 print("No records found in the vault table.")
         except sqlite3.Error as e:
@@ -118,7 +122,7 @@ class PasswordManager:
         ciphertext = encryptor.update(data.encode()) + encryptor.finalize()
         return base64.b64encode(iv + encryptor.tag + ciphertext).decode()
     
-    def decrypt_data(encrypted_data: str, key: bytes) -> str:
+    def decrypt_data(self, encrypted_data: str, key: bytes):
         encrypted_data = base64.b64decode(encrypted_data.encode())
         iv, tag, ciphertext = encrypted_data[:12], encrypted_data[12:28], encrypted_data[28:]
         cipher = Cipher(algorithms.AES(key), modes.GCM(iv, tag), backend=default_backend())
@@ -135,7 +139,8 @@ class PasswordManager:
             user_input = input("Input password of length 16: ")
             password = bytearray(user_input, 'utf-8')
         elif x == "2":
-            password = generate_password(10)
+            password = generate_password(16)
+            print(password)
         else:
             print("Invalid input")
             return
@@ -184,6 +189,7 @@ class PasswordManager:
                         self.encryption_key[i] = 0
                     self.encryption_key = None
                     print("Encryption key cleared from memory.")
+                break
             else:
                 print("Invalid Input")
                   
