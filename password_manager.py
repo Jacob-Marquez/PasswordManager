@@ -236,8 +236,6 @@ class PasswordManager:
         encr_key = hash_val[mid_hash:]
         self.encryption_key = encr_key
         
-        for i in range(len(encr_key)):
-            encr_key[i] = 0
     
         print("Auth: ",auth_key.hex())
         print("Encr: ",encr_key.hex())
@@ -263,6 +261,9 @@ class PasswordManager:
         # Initialize the encrypted SQLite database. initialize_database(encr_key)
         
         self.user_options(conn)
+        
+        for i in range(len(encr_key)):
+            encr_key[i] = 0
         
         # close account and encrypt database  
 
