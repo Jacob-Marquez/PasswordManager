@@ -194,78 +194,52 @@ class PasswordManager:
                 print("Invalid Input")
                   
     # account creation
-    def create_account(self):
-        
-        print("Welcome User. Press 1 to enter a master password. Press 2 if you would like to have password generated.")
-        x = input()
-        
-        # Master Password creation
-        if x == "1":
-            str = input("Input Master Password of length 16:")
-            master_password = bytearray(str, 'utf-8')
-        elif x == "2":
-            master_password = generate_password(16)
-        else:
-            print("Invalid input")
-            return
-            
-        # Remove later    
-        print(master_password)
-        
+    def create_account(self, master_password_str: str):
+        # Convert input to bytearray
+        master_password = bytearray(master_password_str, 'utf-8')
+
         # Create salt then store in "salt.bin" for later authentication
         salt = os.urandom(16)
         with open(self.salt_file, "wb") as file:
             file.write(salt)
-        print(salt)
-            
-        # Derive a key from the master password using Argon2
-        # The derived key is ARGON2_HASH_LEN bytes long
-        hash_val = argon2_hash_raw(
-        password_ba=master_password,
-        salt_ba=salt,
-        t_cost=2,
-        m_cost=102400,
-        parallelism=8,
-        hash_len=32,
-        argon2_type=Type.I  # Use Type.I from argon2.low_level
-    )
 
-    # Split derived key into auth and encryption keys
+        # Derive a key from the master password using Argon2
+        hash_val = argon2_hash_raw(
+            password_ba=master_password,
+            salt_ba=salt,
+            t_cost=2,
+            m_cost=102400,
+            parallelism=8,
+            hash_len=32,
+            argon2_type=Type.I
+        )
+
+        # Split derived key into auth and encryption keys
         mid_hash = len(hash_val) // 2
         auth_key = hash_val[:mid_hash]
         encr_key = hash_val[mid_hash:]
         self.encryption_key = encr_key
-        
-    
-        print("Auth: ",auth_key.hex())
-        print("Encr: ",encr_key.hex())
-       
-        # Hash the authentication key using SHA-256.
+
+        # Hash the authentication key using SHA-256
         hashed_auth_key = hashlib.sha256(auth_key).digest()
-        print(hashed_auth_key.hex())
-        
+
+        # Clear auth key from memory
         for i in range(len(auth_key)):
             auth_key[i] = 0
-        
+
         # Store hashed auth key in "auth_key.bin"
         with open(self.auth_file, "wb") as file:
             file.write(hashed_auth_key)
-        
+
+        # Clear master password and derived hash from memory
         for i in range(len(master_password)):
             master_password[i] = 0
-            
         for i in range(len(hash_val)):
             hash_val[i] = 0
-        
+
+        # Initialize database
         conn = self.initialize_database()
-        # Initialize the encrypted SQLite database. initialize_database(encr_key)
-        
-        self.user_options(conn)
-        
-        for i in range(len(encr_key)):
-            encr_key[i] = 0
-        
-        # close account and encrypt database  
+        return conn
 
     # Function to access exisitng acoounts
     def access_account(self):

@@ -7,6 +7,7 @@ import getpass
 from argon2.low_level import hash_secret_raw, Type
 from password_manager import PasswordManager
 from generator import generate_password
+from gui import PasswordManagerGUI
 
 
 # File paths for stored salt and hashed authentication key
@@ -16,8 +17,6 @@ DB_FILE = "vault.db"
 
 
 if __name__ == "__main__":
-    pm = PasswordManager()
-    pm.create_account()
-    
-    pm.access_account()
+    pm = PasswordManagerGUI()
+    pm.mainloop()
     
