@@ -16,7 +16,7 @@ def argon2_hash_raw(password_ba, salt_ba,
                     t_cost=2,
                     m_cost=102400,
                     parallelism=8,
-                    hash_len=32,
+                    hash_len=64,
                     argon2_type=Type.I):
     
     password_bytes = bytes(password_ba)
@@ -124,7 +124,7 @@ class PasswordManager:
             t_cost=2,
             m_cost=102400,
             parallelism=8,
-            hash_len=32,
+            hash_len=64,
             argon2_type=Type.I
         )
         mid_hash = len(hash_val) // 2
@@ -168,7 +168,7 @@ class PasswordManager:
                 t_cost=2,
                 m_cost=102400,
                 parallelism=8,
-                hash_len=32,
+                hash_len=64,
                 argon2_type=Type.I
             )
         except Exception:
